@@ -1,0 +1,105 @@
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #ece5dd;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+.chat-container {
+  width: 360px;
+  height: 600px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+header {
+  background: #075e54;
+  color: white;
+  padding: 12px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: #128c7e;
+}
+
+.messages {
+  flex: 1;
+  padding: 10px;
+  overflow-y: auto;
+  background: #ece5dd;
+  display: flex;
+  flex-direction: column;
+}
+
+.msg {
+  margin: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  max-width: 70%;
+  position: relative;
+}
+
+.me {
+  align-self: flex-end;
+  background: #dcf8c6;
+}
+
+.other {
+  align-self: flex-start;
+  background: #fff;
+}
+
+.timestamp {
+  font-size: 11px;
+  color: gray;
+  text-align: right;
+  margin-top: 2px;
+}
+
+.input-area {
+  display: flex;
+  padding: 10px;
+  background: #f0f0f0;
+}
+
+input {
+  flex: 1;
+  border: none;
+  border-radius: 20px;
+  padding: 10px;
+  outline: none;
+}
+
+button {
+  background: #075e54;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  margin-left: 8px;
+  cursor: pointer;
+}
+
+.checkmark {
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+.read {
+  color: #34b7f1; /* biru saat dibaca */
+}
