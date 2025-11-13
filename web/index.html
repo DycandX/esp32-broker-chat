@@ -1,27 +1,19 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PolinesChatMQTT</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pilih Topik Chat</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="chat-container">
-    <header>
-      <div class="avatar"></div>
-      <span id="chatName">Istri</span>
-    </header>
-
-    <div id="messages" class="messages"></div>
-
-    <div class="input-area">
-      <input type="text" id="msg" placeholder="Ketik pesan..." />
-      <button id="sendBtn">></button>
-    </div>
+  <div class="topic-container">
+    <h2>Pilih Topik</h2>
+    <ul>
+      <li><a href="chat.html?topic=chat/general">Chat General</a></li>
+      <li><a href="chat.html?topic=chat/esp32">Chat ESP32</a></li>
+      <li><a href="chat.html?topic=chat/test">Chat Test</a></li>
+    </ul>
   </div>
-
-  <script src="script.js"></script>
 </body>
 </html>

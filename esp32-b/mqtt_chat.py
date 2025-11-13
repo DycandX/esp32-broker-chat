@@ -7,57 +7,77 @@ import os
 
 class ChatClient:
     def __init__(self, ssid, password, broker, client_id):
-        self.wifi_connect(ssid, password)
+        self.ssid = ssid
+        self.password = password
         self.broker = broker
         self.client_id = client_id
         self.topics = ["chat/general", "chat/esp32", "chat/test"]
         self.history_file = "chat_history.json"
+        self.sent_cache = set()  # mencegah duplikat pesan
+
+        self.wifi_connect()
         self.client = MQTTClient(client_id, broker, keepalive=60)
         self.client.set_callback(self.on_message)
         self.load_history()
         self.connect_mqtt()
-        self.last_msg = None  # hindari kirim ulang pesan sama
 
-    def wifi_connect(self, ssid, password):
+    # ---------- WIFI ----------
+    def wifi_connect(self):
         wlan = network.WLAN(network.STA_IF)
         wlan.active(True)
-        wlan.connect(ssid, password)
+        wlan.connect(self.ssid, self.password)
         print("Menghubungkan ke WiFi...")
         while not wlan.isconnected():
             time.sleep(0.5)
-        print("WiFi Connected:", wlan.ifconfig())
+        print("✅ WiFi Connected:", wlan.ifconfig())
 
+    # ---------- MQTT ----------
     def connect_mqtt(self):
         try:
             self.client.connect()
             for t in self.topics:
                 self.client.subscribe(t.encode())
-            print("Subscribed to topics:", self.topics)
+            print("📡 Subscribed to:", self.topics)
         except Exception as e:
-            print("Gagal connect MQTT:", e)
+            print("⚠️ Gagal connect MQTT:", e)
 
     def on_message(self, topic, msg):
-        topic = topic.decode()
         try:
-            message = ujson.loads(msg)
-            sender = message.get("sender", "")
-            text = message.get("text", "")
-            if sender == self.client_id:
-                return  # abaikan pesan sendiri
-            print(f"[{topic}] {sender}: {text}")
-            self.save_message(topic, message)
-        except Exception:
-            print(f"[{topic}] Pesan bukan JSON valid: {msg}")
+            data = ujson.loads(msg)
+            sender = data.get("sender", "")
+            text = data.get("text", "")
+            status = data.get("status", "")
 
+            print(f"[{topic.decode()}] {sender}: {text} ({status})")
+
+            # Hanya balas jika ada perintah khusus
+            if sender != self.client_id and text.startswith("!esp"):
+                reply = f"Perintah '{text}' diterima oleh ESP32"
+                resp = {
+                    "sender": self.client_id,
+                    "text": reply,
+                    "status": "✓"
+                }
+                self.client.publish(topic, ujson.dumps(resp))
+                self.save_message(topic.decode(), resp)
+
+            # Simpan semua pesan masuk (kecuali pesan duplikat)
+            msg_id = f"{sender}:{text}"
+            if msg_id not in self.sent_cache:
+                self.save_message(topic.decode(), data)
+                self.sent_cache.add(msg_id)
+
+        except Exception as e:
+            print("⚠️ Error parsing message:", e)
+
+    # ---------- SEND ----------
     def send_message(self, topic, text):
         message = {"sender": self.client_id, "text": text, "status": "✓"}
         msg_json = ujson.dumps(message)
-        if msg_json != self.last_msg:
-            print("Kirim pesan:", msg_json)
-            self.client.publish(topic.encode(), msg_json.encode('utf-8'))
-            self.save_message(topic, message)
-            self.last_msg = msg_json
+        self.client.publish(topic.encode(), msg_json.encode('utf-8'))
+        self.save_message(topic, message)
 
+    # ---------- HISTORY ----------
     def save_message(self, topic, message):
         if topic not in self.history:
             self.history[topic] = []
@@ -66,7 +86,7 @@ class ChatClient:
             with open(self.history_file, "w") as f:
                 ujson.dump(self.history, f)
         except Exception as e:
-            print("Gagal simpan:", e)
+            print("⚠️ Gagal simpan:", e)
 
     def load_history(self):
         if self.history_file in os.listdir():
@@ -78,16 +98,16 @@ class ChatClient:
         else:
             self.history = {}
 
+    # ---------- LOOP ----------
     def loop_forever(self):
         while True:
             try:
                 self.client.check_msg()
                 time.sleep(0.2)
-            except OSError as e:
-                print("⚠️  Terputus, mencoba reconnect...")
+            except OSError:
+                print("⚠️ Terputus, mencoba reconnect...")
                 time.sleep(3)
                 try:
-                    # Buat client baru agar tidak dobel subscribe
                     self.client = MQTTClient(self.client_id, self.broker, keepalive=60)
                     self.client.set_callback(self.on_message)
                     self.connect_mqtt()
@@ -95,5 +115,4 @@ class ChatClient:
                 except Exception as err:
                     print("Gagal reconnect:", err)
                     time.sleep(5)
-
 
