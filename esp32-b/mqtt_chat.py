@@ -82,16 +82,18 @@ class ChatClient:
         while True:
             try:
                 self.client.check_msg()
-                time.sleep(0.2)  # delay agar tidak diblok broker
+                time.sleep(0.2)
             except OSError as e:
                 print("⚠️  Terputus, mencoba reconnect...")
-                try:
-                    self.client.disconnect()
-                except:
-                    pass
                 time.sleep(3)
                 try:
+                    # Buat client baru agar tidak dobel subscribe
+                    self.client = MQTTClient(self.client_id, self.broker, keepalive=60)
+                    self.client.set_callback(self.on_message)
                     self.connect_mqtt()
+                    print("✅ Reconnected sukses.")
                 except Exception as err:
                     print("Gagal reconnect:", err)
                     time.sleep(5)
+
+
