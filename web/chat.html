@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>ESP32 Chat</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+      body {
+        font-family: Arial;
+        background: #f5f5f5;
+      }
+      #chat-box {
+        height: 300px;
+        overflow-y: auto;
+        background: white;
+        border-radius: 8px;
+        padding: 10px;
+      }
+      .msg {
+        margin: 6px 0;
+      }
+      .sender {
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h2 id="topic-title"></h2>
+    <div id="chat-box"></div>
+
+    <input id="msg" placeholder="Ketik pesan..." style="width: 80%" />
+    <button onclick="sendMessage()">Kirim</button>
+
+    <script>
+      const topic = new URLSearchParams(window.location.search).get("topic");
+      const client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt");
+      document.getElementById("topic-title").innerText = "Topik: " + topic;
+
+      const username = "WebUser_" + Math.floor(Math.random() * 1000);
+
+      client.on("connect", () => {
+        console.log("Terhubung ke broker HiveMQ");
+        client.subscribe(topic);
+      });
+
+      client.on("message", (t, payload) => {
+        const msg = JSON.parse(payload.toString());
+        const box = document.getElementById("chat-box");
+        box.innerHTML += `<div class="msg"><span class="sender">${msg.sender}:</span> ${msg.text} ${msg.status}</div>`;
+        box.scrollTop = box.scrollHeight;
+
+        // ubah status jadi dibaca
+        if (msg.status === "✓" && msg.sender !== username) {
+          msg.status = "✓✓";
+          client.publish(topic, JSON.stringify(msg));
+        }
+      });
+
+      function sendMessage() {
+        const text = document.getElementById("msg").value;
+        if (!text.trim()) return;
+        const msg = { sender: username, text: text, status: "✓" };
+        client.publish(topic, JSON.stringify(msg));
+        document.getElementById("msg").value = "";
+      }
+    </script>
+  </body>
+</html>
